@@ -1,0 +1,287 @@
+
+# function Normalize_Counts
+# Arguments: cts, sampleInfo, Variable_Of_Interest, Groups_Selected, Folder_Name
+# Input column name in sampleInfo as Variable_Of_Interest
+# Select two variables in Variable_of_Interest as Groups_Selected
+# Normalizes the counts for all genes and generates a csv file with normalized counts data
+
+Normalize_Counts <- function(cts, sampleInfoSel){
+  formula<-as.formula(paste("~  ", Variable_Of_Interest))
+  
+  # select the counts relevant groups_selected
+  flag <- rowSums(cts == 0) < ncol(cts)
+  ctsSel <- cts[flag,]
+  ctsSel <- cts[, idx]
+  
+  dds <- DESeqDataSetFromMatrix(
+    countData = ctsSel,
+    colData = sampleInfoSel,
+    design = formula)
+  
+  dds <- DESeq(dds)
+  
+  ctNorm <- counts(dds, normalized = TRUE, replaced = FALSE)
+  
+  dir.create(Folder_Name)
+  write.csv(ctNorm, file = paste0(Folder_Name, "/normalizedReadCounts.csv"), quote = TRUE)
+  
+  return(dds)
+}
+
+# dds = Normalize_Counts(cts = cts, sampleInfoSel = sampleInfoSel)
+
+
+# function Distance_Clustering
+# Arguments: dds, Variable_Of_Interest, Folder_Name
+#Generates the Sample distance heatmap
+Distance_Clustering <- function(dds){
+  vsd <- vst(dds, blind=TRUE)
+  sampleDist <- dist(t(assay(vsd)))
+  sampleDistMatrix <- as.matrix(sampleDist)
+  
+  colTreatment <- c(ggsci::pal_nejm("default")(3)[3], ggsci::pal_nejm("default")(3)[2])
+  names(colTreatment) <- Groups_Selected
+  
+  ha <- HeatmapAnnotation(
+    treatment = vsd[[Variable_Of_Interest]],
+    col = list(treatment = colTreatment),
+    annotation_legend_param = list(
+      treatment = list(nrow = 1, direction = "horizontal", title = "")
+    ),
+    show_annotation_name = FALSE
+  )
+  
+  
+  ht <- Heatmap(
+    sampleDistMatrix,
+    top_annotation = ha,
+    cluster_rows = hclust(as.dist(sampleDistMatrix)),
+    cluster_columns = hclust(as.dist(sampleDistMatrix)),
+    name = "Dist",
+    show_row_names = FALSE,
+    show_column_names = TRUE,
+    column_names_gp = gpar(
+      col =
+        ifelse(vsd[[Variable_Of_Interest]] == "Control", ggsci::pal_nejm("default")(3)[3],
+               ggsci::pal_nejm("default")(3)[2])),
+    
+    col = colorRampPalette(rev(brewer.pal(9, "Blues")) )(255),
+    column_names_side = "bottom"
+  )
+  
+  pdf(paste0(Folder_Name,"/sampleDist.pdf"), width = 5, height = 6)
+  draw(ht,annotation_legend_side = "bottom")
+  invisible(dev.off())
+}
+
+#Distance_Clustering(dds = dds, Variable_Of_Interest = "group", Folder_Name = "qcdata" )
+
+#function PCA_Plots
+#Arguments: dds, Variable_Of_Interest, Samples_Column_name, sampleInfo, Variables_For_PCA, Folder_Name, Color_Choice and Shape_Choice
+#Performs the principle component analysis and generates the plots
+
+PCA_Plots <- function(dds, sampleInfoSel, Variables_For_PCA, Color_Choice=NULL, Shape_Choice = NULL){
+  
+  vsd <- vst(dds, blind=TRUE)
+  pcaData <- plotPCA(vsd, intgroup=Variable_Of_Interest, returnData=TRUE)
+  if(sum(pcaData$name == sampleInfoSel[[Samples_Column_Name]]) != nrow(sampleInfoSel)){
+    stop("Not Match")
+  }
+  
+  for (i in 1:length(Variables_For_PCA)){
+    if(grepl(":",Variables_For_PCA[i])){
+      if(strsplit(Variables_For_PCA[i], ":")[[1]][2] == "numeric"){
+        pcaData[[strsplit(Variables_For_PCA[i], ":")[[1]][1]]] <- as.numeric(sampleInfoSel[[strsplit(Variables_For_PCA[i], ":")[[1]][1]]])
+      }
+    }else{
+      pcaData[[Variables_For_PCA[i]]] <- sampleInfoSel[[Variables_For_PCA[i]]]
+    }
+  }
+  
+  
+  percentVar <- round(100 * attr(pcaData, "percentVar"))
+  gp <- ggplot(pcaData, aes(PC1, PC2, color=group, label = name, shape = group)) +
+    geom_point(size=2, show.legend = TRUE) +
+    ggrepel::geom_text_repel(key_glyph = "rect", size = 3) +
+    xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+    ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+    (if (is.null(Color_Choice)){scale_color_manual(values = c("red","blue"))}
+     else{scale_color_manual(values = Color_Choice)}) +
+    (if (is.null(Shape_Choice)){}
+     else{scale_shape_manual(values = Shape_Choice)}) +
+    #ggsci::scale_color_nejm() +
+    #coord_fixed() +
+    theme_light() +
+    guides(color = guide_legend(byrow = T, keyheight = unit(.1, "cm"))) +
+    theme(legend.title = element_blank(), legend.box="vertical", legend.position = "bottom")
+  
+  pdf(paste0(Folder_Name,"/pcaVSD.pdf"), width = 6, height = 6.5)
+  print(gp)
+  invisible(dev.off())
+  
+  # 
+  # gp <- ggplot(pcaData, aes(PC1, PC2, color=group, label = name, shape = group)) +
+  #   geom_point(size=2, show.legend = TRUE) +
+  #   ggrepel::geom_text_repel(size = 3) +
+  #   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  #   ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  #   (if(is.null(Color_Choice)){scale_color_gradient(low = "red", high = "blue") }
+  #    else{scale_color_gradient(low = Color_Choice[1], high = Color_Choice[2])})+
+  #   (if(is.null(Shape_Choice)){}
+  #    else{scale_shape_manual(values = Shape_Choice)})+
+  #   #scale_color_manual(values = ggsci::pal_nejm("default")(3)[c(3,2)]) +
+  #   #ggsci::scale_color_nejm() +
+  #   #coord_fixed() +
+  #   labs(shape = "") +
+  #   theme_light() +
+  #   theme(legend.box="vertical", legend.position = "bottom")
+  # 
+  # pdf(paste0(Folder_Name,"/pcaVSDRIN.pdf"), width = 6, height = 6.5)
+  # print(gp)
+  # invisible(dev.off())
+  
+}
+
+# 
+# #function to perform the principle component analysis
+# PCA_Plots(dds = dds, Variable_Of_Interest = "group", Samples_Column_name = "id", sampleInfoSel = sampleInfoSel, 
+#           Variables_For_PCA = c("genotype","treatment","type","RIN:numeric","mapping_percentage"), 
+#           Folder_Name = "qcdata", Color_Choice = c("red","black"), Shape_Choice = c(12, 13, 14, 15))
+
+#function Y_Reads
+#Arguments: cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name
+#plots the total reads and proportion reads on chromosome Y for all the samples
+Y_Reads <- function(cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name){
+  
+  numTotalReads <- colSums(cts)
+  flagChrY <- stringr::str_detect(geneInfo[[Chromosome_CN]], "chrY")
+  ctsY <- cts[flagChrY,]
+  dplot <- data.frame(
+    ct = colSums(ctsY),
+    ctPercent =  colSums(ctsY)/numTotalReads,
+    sex = sampleInfo[[gender_column_name]],
+    id = sampleInfo[[Samples_column_name]],
+    stringsAsFactors = FALSE
+  )
+  
+  
+  pos <- position_jitter(width = 0.2, height = 0, seed = 2)
+  
+  gp <- ggplot(dplot, aes(x=sex, y=ct)) +
+    geom_boxplot(outlier.shape = NA)+
+    #geom_boxplot(outlier.shape = NA) +
+    geom_jitter(position = pos) +
+    ggrepel::geom_text_repel(aes(label = id), position = pos) +
+    labs(x="", y="Total Reads on ChrY") +
+    theme_light()
+  
+  pdf(paste0(Folder_Name,"/chrYReads.pdf"), width = 5, height = 4)
+  print(gp)
+  invisible(dev.off())
+  
+  
+  gp <- ggplot(dplot, aes(x=sex, y=ctPercent)) +
+    geom_boxplot(outlier.shape = NA)+
+    #geom_boxplot(outlier.shape = NA) +
+    geom_jitter(position = pos) +
+    ggrepel::geom_text_repel(aes(label = id), position = pos) +
+    labs(x="", y="Chr Y Reads Proportion") +
+    theme_light()
+  
+  pdf(paste0(Folder_Name,"/chrYReadsProportion.pdf"), width = 5, height = 4)
+  print(gp)
+  invisible(dev.off())
+}
+
+# Y_Reads(cts = cts, geneInfo = geneInfo, sampleInfo = sampleInfo, Folder_Name = "QC_MaleFemale", Chromosome_CN = "Chr", gender_column_name = "sex", Samples_column_name = "id")
+
+#function X_Reads
+#Arguments: cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name
+#plots the total reads and proportion reads on chromosome X for all the samples
+X_Reads <- function(cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name){
+  
+  numTotalReads <- colSums(cts)
+  flagChrX <- stringr::str_detect(geneInfo[[Chromosome_CN]], "chrX")
+  ctsX <- cts[flagChrX,]
+  dplot <- data.frame(
+    ct = colSums(ctsX),
+    ctPercent =  colSums(ctsX)/numTotalReads,
+    sex = sampleInfo[[gender_column_name]],
+    id = sampleInfo[[Samples_column_name]],
+    stringsAsFactors = FALSE
+  )
+  
+  pos <- position_jitter(width = 0.2, height = 0, seed = 2)
+  
+  gp <- ggplot(dplot, aes(x=sex, y=ct)) +
+    geom_boxplot(outlier.shape = NA)+
+    #geom_boxplot(outlier.shape = NA) +
+    geom_jitter(position = pos) +
+    ggrepel::geom_text_repel(aes(label = id), position = pos) +
+    labs(x="", y="Total Reads on ChrX") +
+    theme_light()
+  
+  pdf(paste0(Folder_Name,"/chrXReads.pdf"), width = 5, height = 4)
+  print(gp)
+  invisible(dev.off())
+  
+  
+  gp <- ggplot(dplot, aes(x=sex, y=ctPercent)) +
+    geom_boxplot(outlier.shape = NA)+
+    #geom_boxplot(outlier.shape = NA) +
+    geom_jitter(position = pos) +
+    ggrepel::geom_text_repel(aes(label = id), position = pos) +
+    labs(x="", y="Chr X Reads Proportion") +
+    theme_light()
+  
+  pdf(paste0(Folder_Name,"/chrXReadsProportion.pdf"), width = 5, height = 4)
+  print(gp)
+  invisible(dev.off())
+  
+  
+}
+
+
+#function XIST_Counts
+#Arguments: cts, geneInfo, genes_column_name, sampleInfo, Folder_Name, gender_column_name, Samples_column_name
+#plots the total reads and proportion reads of XIST gene for all the samples
+XIST_Counts <- function(cts, geneInfo, genes_column_name, sampleInfo, Folder_Name, gender_column_name, Samples_column_name){
+  
+  numTotalReads <- colSums(cts)
+  dplot <- data.frame(
+    Xist = cts[which(toupper(geneInfo[[genes_column_name]]) == toupper("Xist")),],
+    XistNorm =  cts[which(toupper(geneInfo[[genes_column_name]]) == toupper("Xist")),]/numTotalReads,
+    sex = sampleInfo[[gender_column_name]],
+    id = sampleInfo[[Samples_column_name]]
+  )
+  
+  pos <- position_jitter(width = 0.2, height = 0, seed = 2)
+  
+  gp <- ggplot(dplot, aes(x=sex, y=Xist)) +
+    geom_boxplot(outlier.shape = NA)+
+    geom_jitter(position = pos) +
+    ggrepel::geom_text_repel(aes(label = id), position = pos) +
+    #scale_y_log10() +
+    labs(x="", y="Num Reads Xist") +
+    theme_light()
+  
+  pdf(paste0(Folder_Name,"/Xist.pdf"), width = 5, height = 4)
+  print(gp)
+  invisible(dev.off())
+  
+  gp <- ggplot(dplot, aes(x=sex, y=XistNorm)) +
+    geom_boxplot(outlier.shape = NA)+
+    #geom_boxplot(outlier.shape = NA) +
+    geom_jitter(position = pos) +
+    ggrepel::geom_text_repel(aes(label = id), position = pos) +
+    #scale_y_log10() +
+    labs(x="", y="Normalized Xist") +
+    theme_light()
+  
+  pdf(paste0(Folder_Name,"/XistNorm.pdf"), width = 5, height = 4)
+  print(gp)
+  invisible(dev.off())
+  
+  
+}
+
