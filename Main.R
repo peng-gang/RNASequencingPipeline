@@ -11,13 +11,17 @@ library(clusterProfiler)
 library(ggupset)
 library(circlize)
 library(RColorBrewer)
-source("/Users/josie/Downloads/ds8105/RNAseqPipeline/Analysis_DGE.R")
-source("/Users/josie/Downloads/ds8105/RNAseqPipeline/Quality_Control.R")
+source("Analysis_DGE.R")
+source("Quality_Control.R")
 
+# Input column name in sampleInfo as Variable_Of_Interest
+# Select two variables in Variable_of_Interest as Groups_Selected
+# Clarify the sample name as Samples_Column_Name
 Variable_Of_Interest = "group"
 Groups_Selected = c("KO_2","KO_8")
 Samples_Column_Name = "ID"
 
+# Filter the groups interested in
 idx <- sampleInfo[[Variable_Of_Interest]] %in% Groups_Selected
 sampleInfoSel <- sampleInfo[idx,]
 sampleInfoSel[[Variable_Of_Interest]] <- factor(sampleInfoSel[[Variable_Of_Interest]], levels = Groups_Selected)

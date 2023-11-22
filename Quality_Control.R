@@ -1,8 +1,6 @@
 
 # function Normalize_Counts
-# Arguments: cts, sampleInfo, Variable_Of_Interest, Groups_Selected, Folder_Name
-# Input column name in sampleInfo as Variable_Of_Interest
-# Select two variables in Variable_of_Interest as Groups_Selected
+# Arguments: cts, sampleInfoSel
 # Normalizes the counts for all genes and generates a csv file with normalized counts data
 
 Normalize_Counts <- function(cts, sampleInfoSel){
@@ -28,12 +26,10 @@ Normalize_Counts <- function(cts, sampleInfoSel){
   return(dds)
 }
 
-# dds = Normalize_Counts(cts = cts, sampleInfoSel = sampleInfoSel)
-
 
 # function Distance_Clustering
-# Arguments: dds, Variable_Of_Interest, Folder_Name
-#Generates the Sample distance heatmap
+# Arguments: dds
+# Generates the Sample distance heatmap
 Distance_Clustering <- function(dds){
   vsd <- vst(dds, blind=TRUE)
   sampleDist <- dist(t(assay(vsd)))
@@ -74,13 +70,12 @@ Distance_Clustering <- function(dds){
   invisible(dev.off())
 }
 
-#Distance_Clustering(dds = dds, Variable_Of_Interest = "group", Folder_Name = "qcdata" )
 
-#function PCA_Plots
-#Arguments: dds, Variable_Of_Interest, Samples_Column_name, sampleInfo, Variables_For_PCA, Folder_Name, Color_Choice and Shape_Choice
-#Performs the principle component analysis and generates the plots
+# function PCA_Plots
+# Arguments: dds, sampleInfoSel, Variables_For_PCA, Color_Choice, and Shape_Choice
+# Performs the principle component analysis and generates the plots
 
-PCA_Plots <- function(dds, sampleInfoSel, Variables_For_PCA, Color_Choice=NULL, Shape_Choice = NULL){
+PCA_Plots <- function(dds, sampleInfoSel, Variables_For_PCA, Color_Choice = NULL, Shape_Choice = NULL){
   
   vsd <- vst(dds, blind=TRUE)
   pcaData <- plotPCA(vsd, intgroup=Variable_Of_Interest, returnData=TRUE)
@@ -142,11 +137,7 @@ PCA_Plots <- function(dds, sampleInfoSel, Variables_For_PCA, Color_Choice=NULL, 
   
 }
 
-# 
-# #function to perform the principle component analysis
-# PCA_Plots(dds = dds, Variable_Of_Interest = "group", Samples_Column_name = "id", sampleInfoSel = sampleInfoSel, 
-#           Variables_For_PCA = c("genotype","treatment","type","RIN:numeric","mapping_percentage"), 
-#           Folder_Name = "qcdata", Color_Choice = c("red","black"), Shape_Choice = c(12, 13, 14, 15))
+
 
 #function Y_Reads
 #Arguments: cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name
