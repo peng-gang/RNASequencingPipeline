@@ -61,10 +61,10 @@ plotCtCon <- function(dds, res, idxGene, variable, Samples_Column_Name){
 }
 
 
-#function plotHeat
-#Arguments: vsd, res, geneInfoSel, pvCutoff, log2FoldCutoff, scale, column_km, cluster_columns and variable
-#Extracts the significant genes based on pvalue and log2fold change (pvCutoff and log2FoldCutoff) and generates the heatmap of expression levels of these genes
-plotHeat <- function(vsd, res, geneInfoSel, pvCutoff = 0.05, log2FoldCutoff = 1, scale = TRUE, column_km = 1, cluster_columns = TRUE,variable){
+# function plotHeat
+# Arguments: vsd, res, geneInfoSel, pvCutoff, log2FoldCutoff, scale, column_km, cluster_columns and variable
+# Extracts the significant genes based on pvalue and log2fold change (pvCutoff and log2FoldCutoff) and generates the heatmap of expression levels of these genes
+plotHeat <- function(vsd, res, geneInfoSel, pvCutoff = 0.05, log2FoldCutoff = 1, scale = TRUE, column_km = 1, cluster_columns = TRUE, variable){
   if(sum(rownames(vsd) == rownames(res)) != nrow(vsd)){
     stop("Not Match")
   }
@@ -129,9 +129,9 @@ plotHeat <- function(vsd, res, geneInfoSel, pvCutoff = 0.05, log2FoldCutoff = 1,
 }
 
 
-#function plotHeatCon
-#Arguments: vsd, res, geneInfoSel, pvCutoff, scale, column_km, cluster_columns and variable
-#Extracts the significant genes based on pvalue(pvCutoff) and generates the heatmap of expression levels of these genes
+# function plotHeatCon
+# Arguments: vsd, res, geneInfoSel, pvCutoff, scale, column_km, cluster_columns and variable
+# Extracts the significant genes based on pvalue(pvCutoff) and generates the heatmap of expression levels of these genes
 plotHeatCon <- function(vsd, res, geneInfoSel, pvCutoff = 0.05, scale = TRUE, column_km = 1, cluster_columns = TRUE,variable, Genes_Column_Name){
   
   if(sum(rownames(vsd) == rownames(res)) != nrow(vsd)){
@@ -192,9 +192,9 @@ plotHeatCon <- function(vsd, res, geneInfoSel, pvCutoff = 0.05, scale = TRUE, co
 
 
 
-#function volcanoPlot
-#Arguments: dplot, pvCutoff, log2FoldCutoff and variable
-#Generates a volcano plot
+# function volcanoPlot
+# Arguments: dplot, pvCutoff, log2FoldCutoff and variable
+# Generates a volcano plot
 volcanoPlot <- function(dplot, pvCutoff = 0.05, log2FoldCutoff = 1,variable){
   tmp <- RColorBrewer::brewer.pal(9,"Set1")
   col <- c(tmp[9], tmp[2], tmp[3], tmp[1])
@@ -221,12 +221,12 @@ volcanoPlot <- function(dplot, pvCutoff = 0.05, log2FoldCutoff = 1,variable){
 }
 
 
-#function twoGroupCompare
-#Arguments: Feature_Counts, Sample_Info, Samples_Column_Name, Gene_Info, Genes_Column_Name, Variale_Of_Interest, Groups_Selected, Covariates, Folder_Name, pvCutoff, log2Fold_Cutoff, Extra_Filters
-#Performs the DESeq2 analysis using the counts data(Feature_Counts), Sample Information (Sample_Info), Gene information (Gene_Info) using a categorical variable
-#Generates the plots (Sample_Distance, PCA plot, MA plot, Volcano plot, Counts plot of top 10 genes, Heatmap of significant genes)
-#Performs Go and KEGG pathway analysis and generates the result files
-twoGroupCompare <- function(Feature_Counts, Sample_Info, Gene_Info, Genes_Column_Name, Covariates = NULL, pvalue_Cutoff, log2Fold_Cutoff, Extra_Filters){
+# function twoGroupCompare
+# Arguments: Feature_Counts, Sample_Info, Gene_Info, Genes_Column_Name, Covariates, pvCutoff, log2Fold_Cutoff
+# Performs the DESeq2 analysis using the counts data(Feature_Counts), Sample Information (Sample_Info), Gene information (Gene_Info) using a categorical variable
+# Generates the plots (Sample_Distance, PCA plot, MA plot, Volcano plot, Counts plot of top 10 genes, Heatmap of significant genes)
+# Performs Go and KEGG pathway analysis and generates the result files
+twoGroupCompare <- function(Feature_Counts, Sample_Info, Gene_Info, Genes_Column_Name, Covariates = NULL, pvalue_Cutoff, log2Fold_Cutoff){
   
   #Check if Sample IDs are in same order in Feature counts and Sample Info files
   SampleIDs<-colnames(Feature_Counts)
@@ -281,7 +281,7 @@ twoGroupCompare <- function(Feature_Counts, Sample_Info, Gene_Info, Genes_Column
   }
   
   
-  #Conversion of categorical variables into factors
+  # Conversion of categorical variables into factors
   # Sample_Info_Sel[[Variable_Of_Interest]] <- factor(Sample_Info_Sel[[Variable_Of_Interest]], levels = Groups_Selected)
   
   
@@ -769,9 +769,7 @@ continuousCompare <- function(Feature_Counts, Sample_Info, Samples_Column_Name, 
     paste0("Covariates: ", Covariates),
     "",
     paste0("pvalue cutoff: ", pvalue_Cutoff),
-    "",
-    paste0("Extra Filters: ", Extra_Filters)
-  )
+    "",)
   
   writeLines(readme_content, readme_path)
   

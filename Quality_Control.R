@@ -1,6 +1,8 @@
 
 # function Normalize_Counts
 # Arguments: cts, sampleInfoSel
+# cts as the matrix with gene id and gene symbols information; 
+# sampleInfoSel as the dataframe including samples required by analysis
 # Normalizes the counts for all genes and generates a csv file with normalized counts data
 
 Normalize_Counts <- function(cts, sampleInfoSel){
@@ -28,7 +30,7 @@ Normalize_Counts <- function(cts, sampleInfoSel){
 
 
 # function Distance_Clustering
-# Arguments: dds
+# Arguments: dds from the output of Normalize_Counts()
 # Generates the Sample distance heatmap
 Distance_Clustering <- function(dds){
   vsd <- vst(dds, blind=TRUE)
@@ -186,9 +188,9 @@ Y_Reads <- function(cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gende
 
 # Y_Reads(cts = cts, geneInfo = geneInfo, sampleInfo = sampleInfo, Folder_Name = "QC_MaleFemale", Chromosome_CN = "Chr", gender_column_name = "sex", Samples_column_name = "id")
 
-#function X_Reads
-#Arguments: cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name
-#plots the total reads and proportion reads on chromosome X for all the samples
+# function X_Reads
+# Arguments: cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name
+# plots the total reads and proportion reads on chromosome X for all the samples
 X_Reads <- function(cts, geneInfo, sampleInfo, Folder_Name, Chromosome_CN, gender_column_name, Samples_column_name){
   
   numTotalReads <- colSums(cts)
